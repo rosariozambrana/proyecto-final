@@ -43,7 +43,7 @@ jobs:
 
       - name: Run Code Coverage with Maven
         #run: ./mvnw --batch-mode test
-        run: mvn -B test jacoco:report --file pom.xml
+        run: mvn -B verify --file pom.xml
 
       # - name: Run tests with Maven
       #   run: mvn -B test --file pom.xml
