@@ -41,8 +41,9 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            chmod +x /home/${{ secrets.SSH_USER }}/app/scripts/deploy.sh
+            mkdir -p /home/${{ secrets.SSH_USER }}/app
             cd /home/${{ secrets.SSH_USER }}/app
+            chmod +x scripts/deploy.sh
             ./scripts/deploy.sh
 
   deploy-app-server:
@@ -81,6 +82,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            chmod +x /home/${{ secrets.SSH_USER }}/app/scripts/deploy.sh
+            mkdir -p /home/${{ secrets.SSH_USER }}/app
             cd /home/${{ secrets.SSH_USER }}/app
+            chmod +x scripts/deploy.sh
             ./scripts/deploy.sh
