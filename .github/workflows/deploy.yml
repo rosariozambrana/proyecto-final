@@ -31,7 +31,7 @@ jobs:
           host: ${{ secrets.CICD_SERVER_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "target/webapi-0.0.1-SNAPSHOT.jar,scripts/deploy.sh"
+          source: "target/webapi-0.0.1-SNAPSHOT.jar,src/scripts/deploy.sh"
           target: "/home/${{ secrets.SSH_USER }}/app"
 
       - name: Execute Remote Deploy Script on CI/CD Server
@@ -43,8 +43,9 @@ jobs:
           script: |
             mkdir -p /home/${{ secrets.SSH_USER }}/app
             cd /home/${{ secrets.SSH_USER }}/app
-            chmod +x scripts/deploy.sh
-            ./scripts/deploy.sh
+            cp src/scripts/deploy.sh ./deploy.sh
+            chmod +x deploy.sh
+            ./deploy.sh
 
   deploy-app-server:
     needs: deploy-cicd-server
@@ -72,7 +73,7 @@ jobs:
           host: ${{ secrets.APP_SERVER_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "target/webapi-0.0.1-SNAPSHOT.jar,scripts/deploy.sh"
+          source: "target/webapi-0.0.1-SNAPSHOT.jar,src/scripts/deploy.sh"
           target: "/home/${{ secrets.SSH_USER }}/app"
 
       - name: Execute Remote Deploy Script on AppServer
@@ -84,5 +85,6 @@ jobs:
           script: |
             mkdir -p /home/${{ secrets.SSH_USER }}/app
             cd /home/${{ secrets.SSH_USER }}/app
-            chmod +x scripts/deploy.sh
-            ./scripts/deploy.sh
+            cp src/scripts/deploy.sh ./deploy.sh
+            chmod +x deploy.sh
+            ./deploy.sh
