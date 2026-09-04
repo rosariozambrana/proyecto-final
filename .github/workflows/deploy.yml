@@ -55,8 +55,6 @@ jobs:
             cd /home/${{ secrets.SSH_USER }}/app
             ./scripts/deploy.sh
 
-            exit 1
-
   deploy-app-server:
     needs: deploy-cicd-server
     runs-on: ubuntu-latest
