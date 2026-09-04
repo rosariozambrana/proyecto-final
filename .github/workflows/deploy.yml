@@ -5,6 +5,7 @@ on:
     branches:
       - main
 
+
 jobs:
   deploy-cicd-server:
     runs-on: ubuntu-latest
