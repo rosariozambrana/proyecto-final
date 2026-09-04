@@ -1,58 +1,41 @@
 #!/bin/bash
+set -euo pipefail
 
-# Detener la ejecución inmediatamente si ocurre algún error
-set -e
+APP_DIR="${APP_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
+JAR_PATH="${JAR_PATH:-$APP_DIR/target/webapi-0.0.1-SNAPSHOT.jar}"
+PORT_BLUE="${PORT_BLUE:-8080}"
+PORT_GREEN="${PORT_GREEN:-8081}"
+STATE_FILE="${STATE_FILE:-$APP_DIR/.active_color}"
+NGINX_UPSTREAM_FILE="${NGINX_UPSTREAM_FILE:-/etc/nginx/conf.d/webapi-upstream.conf}"
+HEALTH_TIMEOUT="${HEALTH_TIMEOUT:-60}"
 
-# Configuración general
-APP_NAME="webapi"
-JAR_PATH="target/webapi-0.0.1-SNAPSHOT.jar"
-PORT_BLUE=8080
-PORT_GREEN=8081
+[[ -f "$JAR_PATH" ]] || { echo "No se encuentra el JAR: $JAR_PATH" >&2; exit 1; }
 
-echo "=== INICIANDO DESPLIEGUE BLUE-GREEN ==="
-
-# 1. Validar que el archivo JAR exista antes de hacer nada
-if [ ! -f "$JAR_PATH" ]; then
-    echo "Error: No se encuentra el archivo JAR en $JAR_PATH. Ejecuta primero la compilación."
-    exit 1
-fi
-
-# 2. Detectar qué puerto está actualmente activo en el sistema
-ACTIVE_PORT=$(sudo lsof -i -P -n | grep LISTEN | grep java | awk '{print $9}' | grep -oE '[0-9]+$' | head -n 1)
-
-if [ -z "$ACTIVE_PORT" ]; then
-    echo "No hay ninguna instancia corriendo. Desplegando en Blue ($PORT_BLUE)..."
-    TARGET_PORT=$PORT_BLUE
-elif [ "$ACTIVE_PORT" -eq "$PORT_BLUE" ]; then
-    echo "Entorno actual en Blue ($PORT_BLUE). Desplegando nueva versión en Green ($PORT_GREEN)..."
-    TARGET_PORT=$PORT_GREEN
+active_color=""
+[[ -f "$STATE_FILE" ]] && active_color=$(<"$STATE_FILE")
+if [[ "$active_color" == "BLUE" ]]; then
+    target_color="GREEN"
+    target_port="$PORT_GREEN"
 else
-    echo "Entorno actual en Green ($PORT_GREEN). Desplegando nueva versión en Blue ($PORT_BLUE)..."
-    TARGET_PORT=$PORT_BLUE
+    target_color="BLUE"
+    target_port="$PORT_BLUE"
 fi
 
-echo "-> Puerto objetivo para el despliegue: $TARGET_PORT"
+echo "Desplegando $target_color en el puerto $target_port"
+nohup java -jar "$JAR_PATH" \
+    --server.port="$target_port" \
+    --app.instance="$target_color" \
+    > "$APP_DIR/app-$target_port.log" 2>&1 &
 
-# 3. Liberar el puerto objetivo por si quedó algún proceso huérfano
-echo "Liberando el puerto $TARGET_PORT si estuviera ocupado..."
-sudo fuser -k ${TARGET_PORT}/tcp || true
+deadline=$((SECONDS + HEALTH_TIMEOUT))
+until [[ $(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$target_port/actuator/health" || true) == "200" ]]; do
+    if (( SECONDS >= deadline )); then
+        echo "Health check fallido para $target_color ($target_port)" >&2
+        exit 1
+    fi
+    sleep 2
+done
 
-# 4. Levantar la nueva versión en segundo plano apuntando al puerto objetivo
-echo "Iniciando la aplicación en el puerto $TARGET_PORT..."
-nohup java -jar -Dserver.port=$TARGET_PORT $JAR_PATH > app-$TARGET_PORT.log 2>&1 &
-
-# 5. Esperar unos segundos para que Spring Boot inicie por completo
-echo "Esperando inicio de la aplicación..."
-sleep 12
-
-# 6. Verificación de salud (Health Check) local
-RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$TARGET_PORT/actuator/health || echo "000")
-
-if [ "$RESPONSE" -eq 200 ] || [ "$RESPONSE" -eq 404 ]; then
-    echo "¡Despliegue exitoso en el puerto $TARGET_PORT!"
-    echo "=== DESPLIEGUE COMPLETADO CORRECTAMENTE ==="
-else
-    echo "Error crítico: El servicio en el puerto $TARGET_PORT no respondió correctamente (Código HTTP: $RESPONSE)."
-    echo "Revisa el archivo de log app-$TARGET_PORT.log para más detalles."
-    exit 1
-fi
+"$(dirname "$0")/switch-traffic.sh" "$target_port" "$NGINX_UPSTREAM_FILE"
+printf '%s\n' "$target_color" > "$STATE_FILE"
+echo "BLUE-GREEN completado: tráfico dirigido a $target_color"

@@ -58,6 +58,14 @@ class WebapiApplicationTests {
 	}
 
 	@Test
+	void checkInstanceResponse() throws Exception {
+		MockMvc.perform(get("/api/instance")
+				.accept(MediaType.TEXT_PLAIN))
+			.andExpect(status().isOk())
+			.andExpect(content().string("BLUE"));
+	}
+
+	@Test
 	void checkDateResponse() throws Exception {
 		MockMvc.perform(get("/date")
 				.accept(MediaType.TEXT_PLAIN))

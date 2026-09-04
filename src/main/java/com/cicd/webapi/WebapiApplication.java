@@ -4,6 +4,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.beans.factory.annotation.Value;
 
 @SpringBootApplication
 public class WebapiApplication {
@@ -26,6 +27,21 @@ class HealthController {
     @GetMapping("/health")
     public String health() {
         return "Server Healthy!";
+    }
+}
+
+@RestController
+class InstanceController {
+
+    private final String instance;
+
+    InstanceController(@Value("${app.instance}") String instance) {
+        this.instance = instance;
+    }
+
+    @GetMapping("/api/instance")
+    public String instance() {
+        return instance;
     }
 }
 
