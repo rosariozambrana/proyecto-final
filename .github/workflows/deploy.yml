@@ -50,6 +50,7 @@ jobs:
             echo "Iniciando nueva versión con Java..."
             nohup java -jar target/webapi-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
             echo "¡Despliegue y ejecución iniciados con éxito!"
+            exit 1
             EOF
             chmod +x /home/${{ secrets.SSH_USER }}/app/scripts/deploy.sh
             cd /home/${{ secrets.SSH_USER }}/app
