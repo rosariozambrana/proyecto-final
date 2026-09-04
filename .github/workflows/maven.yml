@@ -2,33 +2,52 @@ name: CI/CD Pipeline - Build & Test
 
 on:
   push:
-    branches: 
-      - "feature/**"
-      - "main"
+    branches:
+      - main
+      - 'feature/**'
   pull_request:
-    branches: 
-      - "main"
+    branches:
+      - main
 
 jobs:
-  build:
+  ci:
+    name: Build · Test · Coverage · Package
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
 
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-        cache: 'maven'
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Grant execute permission for Maven Wrapper
-      run: chmod +x mvnw
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
 
-    - name: Build with Maven Wrapper
-      run: ./mvnw clean package -DskipTests
+      - name: Build — Compile
+        run: mvn -B compile --file pom.xml
 
-    - name: Run Tests
-      run: ./mvnw test
+      - name: Unit Tests — JUnit
+        run: mvn -B test --file pom.xml
+
+      - name: Code Coverage — JaCoCo
+        run: mvn -B clean verify --file pom.xml
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
+          if-no-files-found: warn
+
+      - name: Package — Generate JAR
+        run: mvn -B package -DskipTests --file pom.xml
+
+      - name: Upload JAR Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-jar
+          path: target/*.jar
+          if-no-files-found: error
