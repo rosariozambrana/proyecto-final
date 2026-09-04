@@ -18,7 +18,7 @@ public class WebapiApplication {
 class HelloController {
     @GetMapping("/")
     public String hello() {
-        return "PROYECTO FINAL!";
+        return "Hello CI/CD World!";
     }
 }
 
@@ -26,7 +26,7 @@ class HelloController {
 class HealthController {
     @GetMapping("/health")
     public String health() {
-        return "Server Listo!";
+        return "Server Healthy!";
     }
 }
 
