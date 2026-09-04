@@ -13,7 +13,6 @@ public class WebapiApplication {
 	}
 
 }
-
 @RestController
 class HelloController {
     @GetMapping("/")
