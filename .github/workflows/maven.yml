@@ -12,38 +12,50 @@ on:
   push:
     branches:
       - main
-      - "feature/**"
+      - 'feature/**'
   pull_request:
-    branches: ["main"]
+    branches:
+      - main
 
 jobs:
-  build:
+  ci:
+    name: Build · Test · Coverage · Package
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK 25
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: "25"
-          distribution: "temurin"
-          cache: maven
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
 
-      - name: Build with Maven
-        ## Uncomment the following line to run build & tests
-        #run: mvn -B package --file pom.xml
-        ## Uncomment the following line to run build without tests option 1
-        run: mvn -B package --file pom.xml -DskipTests
-        ## Uncomment the following line to run build without test option 2
-        #run: ./mvnw --batch-mode compile
+      - name: Build — Compile
+        run: mvn -B compile --file pom.xml
 
-      - name: Run tests with Maven
-        #run: ./mvnw --batch-mode test
+      - name: Unit Tests — JUnit
         run: mvn -B test --file pom.xml
 
-      - name: Run Code Coverage with Maven
-        #run: ./mvnw --batch-mode test
-        run: mvn -B verify --file pom.xml
+      - name: Code Coverage — JaCoCo
+        run: mvn -B clean verify --file pom.xml
 
-      # - name: Run tests with Maven
-      #   run: mvn -B test --file pom.xml
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
+          if-no-files-found: warn
+
+      - name: Package — Generate JAR
+        run: mvn -B package -DskipTests --file pom.xml
+
+      - name: Upload JAR Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-jar
+          path: target/*.jar
+          if-no-files-found: error
