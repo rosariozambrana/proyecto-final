@@ -47,7 +47,9 @@ jobs:
             echo "Deteniendo aplicación anterior..."
             sudo fuser -k 8080/tcp || true
             cd /home/${{ secrets.SSH_USER }}/app
-            echo "Despliegue completado con éxito."
+            echo "Iniciando nueva versión con Java..."
+            nohup java -jar target/webapi-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
+            echo "¡Despliegue y ejecución iniciados con éxito!"
             EOF
             chmod +x /home/${{ secrets.SSH_USER }}/app/scripts/deploy.sh
             cd /home/${{ secrets.SSH_USER }}/app
@@ -95,7 +97,9 @@ jobs:
             echo "Deteniendo aplicación anterior..."
             sudo fuser -k 8080/tcp || true
             cd /home/${{ secrets.SSH_USER }}/app
-            echo "Despliegue completado con éxito."
+            echo "Iniciando nueva versión con Java..."
+            nohup java -jar target/webapi-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
+            echo "¡Despliegue y ejecución iniciados con éxito!"
             EOF
             chmod +x /home/${{ secrets.SSH_USER }}/app/scripts/deploy.sh
             cd /home/${{ secrets.SSH_USER }}/app
